@@ -8,9 +8,13 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <header>
-    <h1>Мой магазин</h1>
-  </header>
+<header>
+  <h1>Мой магазин</h1>
+  <div class="cart-info">
+    Корзина: <span id="cart-count">0</span> шт. на <span id="cart-sum">0</span> ₽
+    <button id="clear-cart" class="clear-cart">Очистить</button>
+  </div>
+</header>
   <main>
     <div id="catalog" class="catalog"></div>
   </main>
