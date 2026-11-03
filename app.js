@@ -1,16 +1,4 @@
-
-const products = [
-  { id: 1, title: 'Ноутбук 15"',       category: 'Компьютеры', price: 85000 },
-  { id: 2, title: 'Монитор 27"',       category: 'Компьютеры', price: 28000 },
-  { id: 3, title: 'Клавиатура',        category: 'Аксессуары', price: 6500 },
-  { id: 4, title: 'Мышь беспроводная', category: 'Аксессуары', price: 2500 },
-  { id: 5, title: 'Мышь проводная', category: 'Аксессуары', price: 1000 },
-  { id: 6, title: 'Наушники проводные', category: 'Аксессуары', price: 3000 },
-  { id: 7, title: 'Микрофон', category: 'Аксессуары', price: 10000 },
-  { id: 8, title: 'SSD 1тб', category: 'Компьютеры', price: 13000 },
-  { id: 9, title: 'Коврик для мыши', category: 'Аксессуары', price: 300 }
-];
-
+let products = [];
 const cart = [];
 
 const catalog = document.getElementById('catalog');
@@ -20,7 +8,7 @@ const cartSum = document.getElementById('cart-sum');
 function renderProducts() {
   catalog.innerHTML = products.map(p => `
     <div class="card">
-      <div class="category">${p.category}</div>
+      <div class="category">${p.category || p.name || 'Без категории'}</div>
       <h3>${p.title}</h3>
       <div class="price">${Number(p.price).toLocaleString('ru-RU')} ₽</div>
       <button data-id="${p.id}">В корзину</button>
@@ -42,11 +30,25 @@ catalog.addEventListener('click', e => {
   renderCart();
 });
 
-const clearCartBtn = document.getElementById('clear-cart');
+async function loadProducts() {
+  try {
+    const response = await fetch('http://localhost:3000/api/products');
+    if (!response.ok) throw new Error('Ошибка сервера: ' + response.status);
+    products = await response.json();
+    renderProducts();
+  } catch (err) {
+    catalog.innerHTML = '<p>Не удалось загрузить товары. Запущен ли сервер?</p>';
+    console.error(err);
+  }
+}
 
-clearCartBtn.addEventListener('click', () => {
-  cart.length = 0;      // очищаем массив, сохраняя ссылку
-  renderCart();
-});
+// Находим кнопку очистки (замени 'clear-cart' на её реальный id, если он другой)
+const clearBtn = document.getElementById('clear-cart'); // или document.querySelector('.clear-btn')
+if (clearBtn) {
+  clearBtn.addEventListener('click', () => {
+    cart.length = 0; // Очищаем массив корзины
+    renderCart();    // Перерисовываем счетчик (будет 0)
+  });
+}
 
-renderProducts();
+loadProducts();
