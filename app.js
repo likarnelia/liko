@@ -1,17 +1,20 @@
+const API = 'http://localhost:3000/api';
 let products = [];
 const cart = [];
 
 const catalog = document.getElementById('catalog');
 const cartCount = document.getElementById('cart-count');
 const cartSum = document.getElementById('cart-sum');
+const nameInput = document.getElementById('customer-name');
 
 function renderProducts() {
   catalog.innerHTML = products.map(p => `
     <div class="card">
-      <div class="category">${p.category || p.name || 'Без категории'}</div>
+      <div class="category">${p.category}</div>
       <h3>${p.title}</h3>
       <div class="price">${Number(p.price).toLocaleString('ru-RU')} ₽</div>
-      <button data-id="${p.id}">В корзину</button>
+      <div class="stock">В наличии: ${p.stock} шт.</div>
+      <button data-id="${p.id}" ${p.stock === 0 ? 'disabled' : ''}>В корзину</button>
     </div>
   `).join('');
 }
@@ -23,16 +26,27 @@ function renderCart() {
     .toLocaleString('ru-RU');
 }
 
+function groupCart() {
+  const counts = {};
+  cart.forEach(p => { counts[p.id] = (counts[p.id] || 0) + 1; });
+  return Object.entries(counts).map(([id, quantity]) => ({ id: Number(id), quantity }));
+}
+
 catalog.addEventListener('click', e => {
   if (e.target.tagName !== 'BUTTON') return;
   const product = products.find(p => p.id === Number(e.target.dataset.id));
+  const inCart = cart.filter(p => p.id === product.id).length;
+  if (inCart >= product.stock) {
+    alert('Больше нет в наличии');
+    return;
+  }
   cart.push(product);
   renderCart();
 });
 
 async function loadProducts() {
   try {
-    const response = await fetch('http://localhost:3000/api/products');
+    const response = await fetch(API + '/products');
     if (!response.ok) throw new Error('Ошибка сервера: ' + response.status);
     products = await response.json();
     renderProducts();
@@ -42,13 +56,26 @@ async function loadProducts() {
   }
 }
 
-// Находим кнопку очистки (замени 'clear-cart' на её реальный id, если он другой)
-const clearBtn = document.getElementById('clear-cart'); // или document.querySelector('.clear-btn')
-if (clearBtn) {
-  clearBtn.addEventListener('click', () => {
-    cart.length = 0; // Очищаем массив корзины
-    renderCart();    // Перерисовываем счетчик (будет 0)
-  });
+async function checkout() {
+  const name = nameInput.value.trim();
+  if (!name) return alert('Введите имя');
+  if (cart.length === 0) return alert('Корзина пуста');
+  try {
+    const response = await fetch(API + '/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customerName: name, items: groupCart() })
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Ошибка оформления заказа');
+    alert('Заказ №' + data.orderId + ' оформлен. Сумма: ' + Number(data.total).toLocaleString('ru-RU') + ' ₽');
+    cart.length = 0;
+    renderCart();
+    await loadProducts();
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
+document.getElementById('checkout').addEventListener('click', checkout);
 loadProducts();
