@@ -119,16 +119,7 @@ app.post('/api/orders', async (req, res) => {
 
 // ---------- Поиск ----------
 // НЕБЕЗОПАСНЫЙ вариант (только для демонстрации атаки): запрос собирается склейкой строк
-app.get('/api/search-unsafe', async (req, res) => {
-  try {
-    const q = req.query.title || '';
-    const sql = "SELECT id, title, price FROM products WHERE title LIKE '%" + q + "%'";
-    const [rows] = await pool.query(sql);
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+
 
 // БЕЗОПАСНЫЙ вариант: значение передаётся параметром
 app.get('/api/search', async (req, res) => {
